@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚗 Used Car Price Prediction Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1><i class="fas fa-car"></i> Used Car Price Prediction Dashboard</h1>
+            <p>Advanced Machine Learning Analysis for Used Car Valuation</p>
+        </header>
+
+        <!-- Upload Section -->
+        <section class="upload-section" id="uploadSection">
+            <div class="upload-card">
+                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                <h2>Upload Your Car Data</h2>
+                <p>Upload a CSV file containing used car data to start the analysis</p>
+                
+                <form id="uploadForm" class="upload-form">
+                    <div class="file-input-container">
+                        <input type="file" id="fileInput" accept=".csv" class="file-input">
+                        <label for="fileInput" class="file-label">
+                            <i class="fas fa-file-csv"></i>
+                            Choose CSV File
+                        </label>
+                    </div>
+                    <button type="submit" class="analyze-btn" id="analyzeBtn" disabled>
+                        <i class="fas fa-chart-line"></i>
+                        Start Analysis
+                    </button>
+                </form>
+                
+                <div class="requirements">
+                    <h3>📋 Expected CSV Format:</h3>
+                    <ul>
+                        <li><strong>Required Columns:</strong> Name, Location, Year, Kilometers_Driven, Fuel_Type, Transmission, Owner_Type, Mileage, Engine, Power, Seats, Price</li>
+                        <li><strong>Optional Columns:</strong> New_Price</li>
+                        <li><strong>First row should be headers</strong></li>
+                        <li><strong>Sample data will be generated automatically if no file is uploaded</strong></li>
+                    </ul>
+                    <div style="margin-top: 15px; padding: 10px; background: #e8f4fd; border-radius: 5px;">
+                        <strong>💡 Tip:</strong> If you don't have a CSV file, just click "Start Analysis" to use sample data
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Loading Section -->
+        <section class="loading-section" id="loadingSection" style="display: none;">
+            <div class="loading-card">
+                <div class="spinner"></div>
+                <h2>Analyzing Your Data</h2>
+                <p>This may take a few moments...</p>
+                <div class="progress-steps">
+                    <div class="step active" id="step1">Data Cleaning</div>
+                    <div class="step" id="step2">Model Training</div>
+                    <div class="step" id="step3">Analysis</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <!-- Summary Cards -->
+            <div class="summary-cards">
+                <div class="card">
+                    <i class="fas fa-car-side"></i>
+                    <h3 id="totalCars">0</h3>
+                    <p>Total Cars Analyzed</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-rupee-sign"></i>
+                    <h3 id="avgPrice">₹0</h3>
+                    <p>Average Price</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-bullseye"></i>
+                    <h3 id="accuracy">0%</h3>
+                    <p>Prediction Accuracy</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-chart-bar"></i>
+                    <h3 id="r2Score">0.00</h3>
+                    <p>R² Score</p>
+                </div>
+            </div>
+
+            <!-- Model Performance -->
+            <div class="performance-section">
+                <h2><i class="fas fa-tachometer-alt"></i> Model Performance</h2>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <h4>R² Score</h4>
+                        <div class="metric-value" id="r2Metric">0.0000</div>
+                        <p>Variance Explained</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>RMSE</h4>
+                        <div class="metric-value" id="rmseMetric">₹0</div>
+                        <p>Root Mean Square Error</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>MAE</h4>
+                        <div class="metric-value" id="maeMetric">₹0</div>
+                        <p>Mean Absolute Error</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>MAPE</h4>
+                        <div class="metric-value" id="mapeMetric">0%</div>
+                        <p>Mean Absolute Percentage Error</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualizations -->
+            <div class="visualization-section">
+                <h2><i class="fas fa-chart-line"></i> Analysis Visualizations</h2>
+                <div class="plots-grid">
+                    <div class="plot-card">
+                        <h4>Feature Importance</h4>
+                        <div class="chart-container">
+                            <canvas id="featureChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="plot-card">
+                        <h4>Price Distribution</h4>
+                        <div class="chart-container">
+                            <canvas id="priceChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="plot-card">
+                        <h4>Actual vs Predicted</h4>
+                        <div class="chart-container">
+                            <canvas id="predictionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature Importance -->
+            <div class="feature-section">
+                <h2><i class="fas fa-star"></i> Top 10 Important Features</h2>
+                <div class="feature-list" id="featureList">
+                    <!-- Features will be populated here -->
+                </div>
+            </div>
+
+            <!-- Sample Predictions -->
+            <div class="predictions-section">
+                <h2><i class="fas fa-search"></i> Sample Predictions</h2>
+                <div class="predictions-table">
+                    <table id="predictionsTable">
+                        <thead>
+                            <tr>
+                                <th>Car Name</th>
+                                <th>Actual Price</th>
+                                <th>Predicted Price</th>
+                                <th>Error</th>
+                                <th>Error %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Predictions will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Download Section -->
+            <div class="download-section">
+                <h2><i class="fas fa-download"></i> Download Results</h2>
+                <div class="download-buttons">
+                    <button class="download-btn" id="downloadPredictions">
+                        <i class="fas fa-file-csv"></i> Download Predictions
+                    </button>
+                    <button class="download-btn" id="downloadMetrics">
+                        <i class="fas fa-chart-bar"></i> Download Metrics
+                    </button>
+                    <button class="download-btn" id="downloadReport">
+                        <i class="fas fa-file-pdf"></i> Download Report
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Error Section -->
+        <section class="error-section" id="errorSection" style="display: none;">
+            <div class="error-card">
+                <i class="fas fa-exclamation-triangle error-icon"></i>
+                <h2>Analysis Failed</h2>
+                <p id="errorMessage">An error occurred during analysis</p>
+                <button class="retry-btn" id="retryBtn">
+                    <i class="fas fa-redo"></i> Try Again
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
